@@ -1,0 +1,29 @@
+services:
+  alignment:
+    build: .
+    image: audio-alignment:1.0.0
+    container_name: audio-alignment
+    ports:
+      - "${ALIGN_PORT:-8000}:8000"
+    environment:
+      # 所有参数均可在此覆盖，默认值见 app/config.py
+      ALIGN_HOST: "0.0.0.0"
+      ALIGN_PORT: "8000"
+      ALIGN_OUTPUT_DIR: "/data/jobs"
+      ALIGN_MIN_OVERLAP_S: "30"
+      ALIGN_B_MIN: "0.999"
+      ALIGN_B_MAX: "1.001"
+      ALIGN_MAX_UPLOAD_MB: "120"
+      ALIGN_JOB_TTL_SECONDS: "3600"
+      ALIGN_JOB_MAX_COUNT: "200"
+    volumes:
+      - alignment-jobs:/data/jobs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import json,urllib.request,sys; r=urllib.request.urlopen('http://127.0.0.1:8000/healthz',timeout=3); sys.exit(0 if json.load(r)['status']=='ok' else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  alignment-jobs:
